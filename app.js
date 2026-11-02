@@ -173,7 +173,22 @@ app.use(async (req, res, next) => {
 
 // 1. Root Route
 app.get("/", (req, res) => {
-  res.send("Backend Development Fundamentals Lab 2 - SQLite Database and CRUD Routes");
+  res.send("Welcome to my Node.js and Express Lab!\n\nBackend Development Fundamentals Lab 2 - SQLite Database and CRUD Routes");
+});
+
+// Lab 1 Route 2: About information
+app.get(["/about", "/about/"], (req, res) => {
+  res.status(200).json({
+    name: "Giddaluru Revathi",
+    section: "CSE AIML-2B "
+  });
+});
+
+// Lab 1 Route 3: Current date and time
+app.get(["/time", "/time/"], (req, res) => {
+  res.status(200).json({
+    currentDateTime: new Date()
+  });
 });
 
 // 2. READ ALL: Get list of all books (supports both /books and /books/)
@@ -282,6 +297,11 @@ app.delete(["/books/:bookId", "/books/:bookId/"], async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+});
+
+// 404 handler for unknown paths
+app.use((req, res) => {
+  res.status(404).send("404 - Page Not Found");
 });
 
 module.exports = app;
