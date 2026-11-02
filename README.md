@@ -63,7 +63,11 @@ npm install
 
 ---
 
-## 💻 Running the Servers
+## 💻 Running the Servers Locally
+
+> [!NOTE]
+> The `localhost:3000` links only work on your machine when the server is actively running in your terminal (`node server-http.js`).
+> For online testing directly in your browser without running code locally, click the **[Live Vercel Deployment](https://labreport1-pi.vercel.app/)**.
 
 ### 1. Plain HTTP Server
 Runs a lightweight server built with the native Node.js `http` module:
@@ -71,7 +75,7 @@ Runs a lightweight server built with the native Node.js `http` module:
 ```bash
 node plain-server.js
 ```
-- **URL:** [http://localhost:3000](http://localhost:3000)
+- **Local URL:** [http://localhost:3000](http://localhost:3000) *(requires server running locally)*
 - **Response:** Plain text `"Hello"`
 
 ---
@@ -82,7 +86,8 @@ Runs an Express.js server with route handling:
 ```bash
 node server-http.js
 ```
-- **URL:** [http://localhost:3000](http://localhost:3000)
+- **Local URL:** [http://localhost:3000](http://localhost:3000) *(requires server running locally)*
+- **Live Deployment URL:** [https://labreport1-pi.vercel.app/](https://labreport1-pi.vercel.app/)
 
 ---
 
