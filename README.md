@@ -18,12 +18,10 @@ The project extends basic CRUD capabilities with advanced query parameter filter
 ## 🔗 Project Links
 
 - 📂 **GitHub Repository:** [https://github.com/giddalururevathi1-tech/Lab_Report_1/tree/lab-3/lab-03](https://github.com/giddalururevathi1-tech/Lab_Report_1/tree/lab-3/lab-03)
-- 🚀 **Live Deployment URL:** `[Insert Deployment Link (e.g., Vercel / Render) if deployed]`
+- 🚀 **Live Deployment URL:** [https://lab-report-1-git-lab-3-giddalururevathi1-tech.vercel.app/](https://lab-report-1-git-lab-3-giddalururevathi1-tech.vercel.app/)
+- 📖 **Live Books API Endpoint:** [https://lab-report-1-git-lab-3-giddalururevathi1-tech.vercel.app/books](https://lab-report-1-git-lab-3-giddalururevathi1-tech.vercel.app/books)
 - 💻 **Localhost Server:** [http://localhost:3000/](http://localhost:3000/)
 - 📚 **Localhost Books API:** [http://localhost:3000/books](http://localhost:3000/books)
-
-> [!NOTE]
-> If the project has not been deployed to a remote cloud host, it can be run and tested completely in your local environment using the installation and run commands below.
 
 ---
 
