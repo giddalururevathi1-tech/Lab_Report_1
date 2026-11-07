@@ -14,7 +14,7 @@
     "sqlite",
     "crud"
   ],
-  "author": "",
+  "author": "Giddaluru Revathi (252U1R6077)",
   "license": "ISC",
   "dependencies": {
     "express": "^5.3.0",

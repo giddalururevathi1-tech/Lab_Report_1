@@ -125,159 +125,223 @@ The `GET /books` endpoint supports 7 query parameters that can be used independe
 
 ---
 
-## 📮 Postman Test Cases (Successful & Failed Requests)
+## 📸 Lab Execution & Verification Screenshots
 
-### A. Successful Test Cases
+The following verification table highlights the Postman test runs and terminal logs validating the query parameters, validation error handling, and CRUD features implemented for Lab 3:
 
-#### 1. Default Books Retrieval (Default Sorting & Pagination)
-- **Method:** `GET`
-- **URL:** `http://localhost:3000/books`
-- **Expected Status:** `200 OK`
-- **Expected Output:** Array of books sorted by `id ASC` with default limit of 10.
-
-#### 2. Search & Filter by Price Range
-- **Method:** `GET`
-- **URL:** `http://localhost:3000/books?search_q=The&min_price=200&max_price=400`
-- **Expected Status:** `200 OK`
-- **Expected Output:** Books containing "The" in title priced between ₹200 and ₹400.
-
-#### 3. Sorting & Pagination
-- **Method:** `GET`
-- **URL:** `http://localhost:3000/books?order_by=price&order=DESC&limit=3&offset=0`
-- **Expected Status:** `200 OK`
-- **Expected Output:** Top 3 most expensive books.
-
-#### 4. Successful Book Creation
-- **Method:** `POST`
-- **URL:** `http://localhost:3000/books`
-- **Headers:** `Content-Type: application/json`
-- **Body (raw JSON):**
-  ```json
-  {
-    "title": "Brave New World",
-    "author": "Aldous Huxley",
-    "price": 320,
-    "pages": 268
-  }
-  ```
-- **Expected Status:** `201 Created`
-- **Expected Response:**
-  ```json
-  {
-    "message": "Book Added Successfully",
-    "bookId": 11
-  }
-  ```
-
-#### 5. Successful Book Details Update
-- **Method:** `PUT`
-- **URL:** `http://localhost:3000/books/2`
-- **Headers:** `Content-Type: application/json`
-- **Body (raw JSON):**
-  ```json
-  {
-    "title": "1984 (Special Edition)",
-    "author": "George Orwell",
-    "price": 350,
-    "pages": 340
-  }
-  ```
-- **Expected Status:** `200 OK`
-- **Expected Response:**
-  ```json
-  {
-    "message": "Book Details Updated Successfully"
-  }
-  ```
-
-#### 6. Successful Book Deletion
-- **Method:** `DELETE`
-- **URL:** `http://localhost:3000/books/2`
-- **Expected Status:** `200 OK`
-- **Expected Response:**
-  ```json
-  {
-    "message": "Book Deleted Successfully"
-  }
-  ```
+| Execution Screenshot | HTTP Method & Endpoint | Test Scenario & Verification | Expected Status |
+| :---: | :--- | :--- | :---: |
+| <img src="Screenshot (361).png" alt="Default Books List" width="400" /> | `GET /books` | Default retrieval of books sorted by `id ASC` with default pagination (`limit=10`, `offset=0`) | **`200 OK`** |
+| <img src="Screenshot (364).png" alt="Single Book by ID" width="400" /> | `GET /books/2` | Retrieve single book record by ID (`1984` by George Orwell) | **`200 OK`** |
+| <img src="Screenshot (365).png" alt="Search Title 1984" width="400" /> | `GET /books?search_q=1984` | Partial title search using SQL `LIKE ?` returning "1984" | **`200 OK`** |
+| <img src="Screenshot (378).png" alt="Search Title Harry" width="400" /> | `GET /books?search_q=Harry` | Partial title search returning "Harry Potter and the Philosopher's Stone" | **`200 OK`** |
+| <img src="Screenshot (366).png" alt="Sort by Price Descending" width="400" /> | `GET /books?order_by=price&order=DESC` | Safe dynamic sorting by price in descending order | **`200 OK`** |
+| <img src="Screenshot (379).png" alt="Sort by Price Headers View" width="400" /> | `GET /books?order_by=price&order=DESC` | Sorting verification with Postman response headers tab visible | **`200 OK`** |
+| <img src="Screenshot (367).png" alt="Price Range Filter 100 to 500" width="400" /> | `GET /books?min_price=100&max_price=500` | Price range filtering using `price >= ? AND price <= ?` | **`200 OK`** |
+| <img src="Screenshot (380).png" alt="Price Range Scrolled View" width="400" /> | `GET /books?min_price=100&max_price=500` | Scrolled response confirming all filtered books are within ₹100 - ₹500 | **`200 OK`** |
+| <img src="Screenshot (368).png" alt="Pagination Limit 5 Offset 0" width="400" /> | `GET /books?limit=5&offset=0` | Pagination query returning the first 5 records using SQL `LIMIT 5 OFFSET 0` | **`200 OK`** |
+| <img src="Screenshot (369).png" alt="POST Create Book Success" width="400" /> | `POST /books` | Successful creation of a new book record returning auto-generated ID | **`201 Created`** |
+| <img src="Screenshot (375).png" alt="Validation Missing Title" width="400" /> | `POST /books` | Input validation rejection when `title` field is missing from payload | **`400 Bad Request`** |
+| <img src="Screenshot (377).png" alt="Validation Missing Author" width="400" /> | `POST /books` | Input validation rejection when `author` field is missing from payload | **`400 Bad Request`** |
+| <img src="Screenshot (374).png" alt="DELETE Missing Book 404" width="400" /> | `DELETE /books/3` | Route handling returning structured 404 when target book ID does not exist | **`404 Not Found`** |
 
 ---
 
-### B. Failed / Validation Error Test Cases
+## 📮 Postman Test Cases & Detailed Verification
 
-#### 1. Invalid `order_by` Column (SQL Injection Protection)
-- **Method:** `GET`
-- **URL:** `http://localhost:3000/books?order_by=password`
-- **Expected Status:** `400 Bad Request`
-- **Expected Response:**
-  ```json
-  {
-    "error": "Invalid 'order_by' parameter. Allowed values: id, title, author, price, pages"
-  }
-  ```
+### A. Successful Requests & Query Parameter Scenarios
 
-#### 2. Invalid Price Range Logic
-- **Method:** `GET`
-- **URL:** `http://localhost:3000/books?min_price=500&max_price=200`
-- **Expected Status:** `400 Bad Request`
-- **Expected Response:**
-  ```json
-  {
-    "error": "'min_price' cannot be greater than 'max_price'"
-  }
-  ```
+#### 1. Retrieve All Books (Default Sorting `id ASC` & Default Limit `10`)
+- **HTTP Method:** `GET`
+- **Request URL:** `http://localhost:3000/books`
+- **Status Code:** `200 OK`
+- **Description:** Returns the complete list of books sorted by `id ASC` using default pagination parameters (`limit=10`, `offset=0`).
 
-#### 3. POST Missing Title
-- **Method:** `POST`
-- **URL:** `http://localhost:3000/books`
+<p align="center">
+  <img src="Screenshot (361).png" alt="Default Books List" width="850" />
+</p>
+
+---
+
+#### 2. Retrieve a Single Book by ID
+- **HTTP Method:** `GET`
+- **Request URL:** `http://localhost:3000/books/2`
+- **Status Code:** `200 OK`
+- **Description:** Retrieves the single book record for ID `2` (*1984* by George Orwell).
+
+<p align="center">
+  <img src="Screenshot (364).png" alt="Single Book by ID" width="850" />
+</p>
+
+---
+
+#### 3. Search Books by Title (`search_q=1984`)
+- **HTTP Method:** `GET`
+- **Request URL:** `http://localhost:3000/books?search_q=1984`
+- **Status Code:** `200 OK`
+- **Description:** Performs partial title search using SQL `LIKE ?` and returns matching book records.
+
+<p align="center">
+  <img src="Screenshot (365).png" alt="Search Title 1984" width="850" />
+</p>
+
+---
+
+#### 4. Search Books by Partial Title (`search_q=Harry`)
+- **HTTP Method:** `GET`
+- **Request URL:** `http://localhost:3000/books?search_q=Harry`
+- **Status Code:** `200 OK`
+- **Description:** Returns all books containing "Harry" in the title.
+
+<p align="center">
+  <img src="Screenshot (378).png" alt="Search Title Harry" width="850" />
+</p>
+
+---
+
+#### 5. Sorting Books by Price Descending (`order_by=price&order=DESC`)
+- **HTTP Method:** `GET`
+- **Request URL:** `http://localhost:3000/books?order_by=price&order=DESC`
+- **Status Code:** `200 OK`
+- **Description:** Validates allowed column allowlist and sorts records from highest to lowest price.
+
+<p align="center">
+  <img src="Screenshot (366).png" alt="Sort by Price Descending" width="850" />
+</p>
+
+*(Additional verification view showing Postman response headers tab):*
+<p align="center">
+  <img src="Screenshot (379).png" alt="Sort by Price Descending - Alternate View" width="850" />
+</p>
+
+---
+
+#### 6. Filter Books by Price Range (`min_price=100&max_price=500`)
+- **HTTP Method:** `GET`
+- **Request URL:** `http://localhost:3000/books?min_price=100&max_price=500`
+- **Status Code:** `200 OK`
+- **Description:** Applies parameterized SQL `price >= ? AND price <= ?` to filter books priced between ₹100 and ₹500.
+
+<p align="center">
+  <img src="Screenshot (367).png" alt="Price Range Filter" width="850" />
+</p>
+
+*(Additional scrolled view confirming all items match range filter criteria):*
+<p align="center">
+  <img src="Screenshot (380).png" alt="Price Range Filter - Scrolled View" width="850" />
+</p>
+
+---
+
+#### 7. Pagination with Limit and Offset (`limit=5&offset=0`)
+- **HTTP Method:** `GET`
+- **Request URL:** `http://localhost:3000/books?limit=5&offset=0`
+- **Status Code:** `200 OK`
+- **Description:** Returns the first 5 records using SQL `LIMIT 5 OFFSET 0`.
+
+<p align="center">
+  <img src="Screenshot (368).png" alt="Pagination Limit 5 Offset 0" width="850" />
+</p>
+
+---
+
+#### 8. Create a New Book (`POST /books`)
+- **HTTP Method:** `POST`
+- **Request URL:** `http://localhost:3000/books`
 - **Headers:** `Content-Type: application/json`
-- **Body (raw JSON):**
+- **Status Code:** `201 Created`
+- **Request Body (JSON):**
   ```json
   {
-    "author": "Aldous Huxley",
-    "price": 320,
-    "pages": 268
+    "title": "Harry Potter",
+    "author": "J.K. Rowling",
+    "price": 450,
+    "pages": 400
   }
   ```
-- **Expected Status:** `400 Bad Request`
-- **Expected Response:**
+- **Response Body:**
+  ```json
+  {
+    "message": "Book Added Successfully",
+    "bookId": 31
+  }
+  ```
+
+<p align="center">
+  <img src="Screenshot (369).png" alt="Successful POST Book" width="850" />
+</p>
+
+---
+
+### B. Validation Failures & Error Handling Scenarios
+
+#### 9. POST Validation Error: Missing Title
+- **HTTP Method:** `POST`
+- **Request URL:** `http://localhost:3000/books`
+- **Headers:** `Content-Type: application/json`
+- **Status Code:** `400 Bad Request`
+- **Request Body (Missing `title`):**
+  ```json
+  {
+    "author": "J.K. Rowling",
+    "price": 450,
+    "pages": 400
+  }
+  ```
+- **Response Body:**
   ```json
   {
     "error": "Title is required and must be a non-empty string"
   }
   ```
 
-#### 4. POST Non-Numeric Price
-- **Method:** `POST`
-- **URL:** `http://localhost:3000/books`
+<p align="center">
+  <img src="Screenshot (375).png" alt="POST Missing Title Validation" width="850" />
+</p>
+
+---
+
+#### 10. POST Validation Error: Missing Author
+- **HTTP Method:** `POST`
+- **Request URL:** `http://localhost:3000/books`
 - **Headers:** `Content-Type: application/json`
-- **Body (raw JSON):**
+- **Status Code:** `400 Bad Request`
+- **Request Body (Missing `author`):**
   ```json
   {
-    "title": "Brave New World",
-    "author": "Aldous Huxley",
-    "price": "three hundred twenty",
-    "pages": 268
+    "title": "Harry Potter",
+    "price": 450,
+    "pages": 400
   }
   ```
-- **Expected Status:** `400 Bad Request`
-- **Expected Response:**
+- **Response Body:**
   ```json
   {
-    "error": "Price is required and must be a valid number"
+    "error": "Author is required and must be a non-empty string"
   }
   ```
 
-#### 5. Non-Existent Book ID (404)
-- **Method:** `GET`
-- **URL:** `http://localhost:3000/books/9999`
-- **Expected Status:** `404 Not Found`
-- **Expected Response:**
+<p align="center">
+  <img src="Screenshot (377).png" alt="POST Missing Author Validation" width="850" />
+</p>
+
+---
+
+#### 11. Resource Not Found Error (`DELETE /books/3`)
+- **HTTP Method:** `DELETE`
+- **Request URL:** `http://localhost:3000/books/3`
+- **Status Code:** `404 Not Found`
+- **Description:** Returns standard 404 error when attempting to delete a book ID that does not exist in the database.
+- **Response Body:**
   ```json
   {
     "message": "Book not found"
   }
   ```
+
+<p align="center">
+  <img src="Screenshot (374).png" alt="DELETE Not Found 404" width="850" />
+</p>
 
 ---
 
@@ -314,3 +378,41 @@ During development and testing of Lab 3, several architectural and behavioral ch
 ### 5. Granular Field Validation in Request Bodies
 - **Issue:** General validation checks returned vague errors when request payloads had empty strings (`""`) or missing keys, making client debugging difficult.
 - **Solution:** Created a modular `validateBookPayload()` helper function that validates `title`, `author`, `price`, and `pages` individually in priority order, returning precise, user-friendly JSON error messages.
+
+---
+
+## 📋 Automated Test Suite Verification
+
+All 17 automated integration tests pass successfully covering query parameters, edge-case validations, error responses, and CRUD lifecycle:
+
+```bash
+npm test
+```
+
+```text
+==================================================
+ Lab 3: REST API, Query Parameters & Validation   
+==================================================
+Server running at http://localhost:3000/
+[GET]  /                                              ✅ [PASS] Root route returns Lab 3 title
+[GET]  /books                                         ✅ [PASS] Default GET /books returns books sorted by id ASC
+[GET]  /books?search_q=Harry                          ✅ [PASS] Query param 'search_q' performs partial title search
+[GET]  /books?order_by=price&order=DESC&limit=3       ✅ [PASS] Query params 'order_by=price' and 'order=DESC' sort correctly
+[GET]  /books?limit=3&offset=2                        ✅ [PASS] Query params 'limit=3&offset=2' paginates correctly
+[GET]  /books?min_price=300&max_price=400             ✅ [PASS] Query params 'min_price' and 'max_price' filter prices correctly
+[GET]  /books?order_by=password                       ✅ [PASS] Validation rejects invalid 'order_by' column with HTTP 400
+[GET]  /books?order=DIAGONAL                          ✅ [PASS] Validation rejects invalid 'order' with HTTP 400
+[GET]  /books?limit=-2                                ✅ [PASS] Validation rejects negative 'limit' with HTTP 400
+[GET]  /books?min_price=600&max_price=200             ✅ [PASS] Validation rejects min_price > max_price with HTTP 400
+[GET]  /books/abc                                     ✅ [PASS] Validation rejects non-integer :bookId with HTTP 400
+[GET]  /books/9999                                    ✅ [PASS] Returns 404 for non-existent book ID
+[GET]  /api/undefined-route                           ✅ [PASS] Catch-all middleware returns 404 for undefined endpoints
+[POST] /books (missing title)                         ✅ [PASS] POST /books rejects request with missing title (HTTP 400)
+[POST] /books (missing author)                        ✅ [PASS] POST /books rejects request with missing author (HTTP 400)
+[POST] /books (non-numeric price)                     ✅ [PASS] POST /books rejects request with non-numeric price (HTTP 400)
+[POST] /books (valid book payload)                    ✅ [PASS] POST /books creates book successfully and returns HTTP 201
+--------------------------------------------------
+Results: 17/17 tests passed.
+==================================================
+```
+
