@@ -15,6 +15,19 @@ try {
 const app = express();
 app.use(express.json());
 
+// Request logging middleware for debugging
+app.use((req, res, next) => {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] ${req.method} ${req.originalUrl}`);
+  if (req.query && Object.keys(req.query).length > 0) {
+    console.log("  Query Params:", JSON.stringify(req.query));
+  }
+  if (req.body && Object.keys(req.body).length > 0) {
+    console.log("  Request Body:", JSON.stringify(req.body));
+  }
+  next();
+});
+
 // Database folder and file path (compatible with local environment and Vercel serverless)
 const isVercel = !!process.env.VERCEL;
 const dbFolder = isVercel ? "/tmp" : path.join(__dirname, "database");
@@ -41,7 +54,68 @@ const createFallbackDB = () => {
   let nextId = 11;
   return {
     async all(query, params = []) {
-      return [...books];
+      let result = [...books];
+
+      // 1. Partial title search (LIKE)
+      if (query.includes("title LIKE ?")) {
+        const likeParam = params.find(
+          (p) => typeof p === "string" && p.startsWith("%") && p.endsWith("%")
+        );
+        if (likeParam) {
+          const term = likeParam.slice(1, -1).toLowerCase();
+          result = result.filter((b) => b.title.toLowerCase().includes(term));
+        }
+      }
+
+      // Filter by price >= ? and price <= ?
+      if (query.includes("price >=") || query.includes("price <=")) {
+        const whereClause = query.split("WHERE")[1]?.split("ORDER BY")[0] || "";
+        const conds = whereClause.split("AND").map((c) => c.trim());
+        let pIdx = 0;
+        conds.forEach((c) => {
+          if (c.includes("title LIKE ?")) {
+            pIdx++;
+          } else if (c.includes("price >=")) {
+            const minVal = params[pIdx++];
+            result = result.filter((b) => b.price >= minVal);
+          } else if (c.includes("price <=")) {
+            const maxVal = params[pIdx++];
+            result = result.filter((b) => b.price <= maxVal);
+          }
+        });
+      }
+
+      // ORDER BY
+      const orderMatch = query.match(/ORDER BY\s+(\w+)\s+(ASC|DESC)/i);
+      if (orderMatch) {
+        const col = orderMatch[1].toLowerCase();
+        const dir = orderMatch[2].toUpperCase();
+        result.sort((a, b) => {
+          let valA = a[col];
+          let valB = b[col];
+          if (typeof valA === "string") {
+            valA = valA.toLowerCase();
+            valB = valB.toLowerCase();
+          }
+          if (valA < valB) return dir === "ASC" ? -1 : 1;
+          if (valA > valB) return dir === "ASC" ? 1 : -1;
+          return 0;
+        });
+      }
+
+      // LIMIT ? OFFSET ?
+      if (query.includes("LIMIT ? OFFSET ?")) {
+        const limitVal = params[params.length - 2];
+        const offsetVal = params[params.length - 1];
+        if (typeof offsetVal === "number" && offsetVal >= 0) {
+          result = result.slice(offsetVal);
+        }
+        if (typeof limitVal === "number" && limitVal > 0) {
+          result = result.slice(0, limitVal);
+        }
+      }
+
+      return result;
     },
     async get(query, params = []) {
       if (query.includes("COUNT(*)")) {
@@ -89,8 +163,12 @@ const initializeDBAndServer = async () => {
 
     // In Vercel serverless, attempt copying bundled database to /tmp (writable directory)
     if (isVercel && !fs.existsSync(dbPath)) {
-      const sourceDb = path.join(__dirname, "database", "library.db");
-      if (fs.existsSync(sourceDb)) {
+      const candidates = [
+        path.join(__dirname, "database", "library.db"),
+        path.join(__dirname, "library.db"),
+      ];
+      const sourceDb = candidates.find((p) => fs.existsSync(p));
+      if (sourceDb) {
         try {
           fs.copyFileSync(sourceDb, dbPath);
         } catch (e) {
@@ -169,33 +247,181 @@ app.use(async (req, res, next) => {
   next();
 });
 
-// ================= CRUD ROUTES =================
+// ================= VALIDATION HELPERS =================
+
+// Validate route parameter :bookId
+const validateBookId = (bookId) => {
+  const id = Number(bookId);
+  if (!Number.isInteger(id) || id <= 0) {
+    return { valid: false, error: "Invalid book ID: must be a positive integer" };
+  }
+  return { valid: true, id };
+};
+
+// Validate body payload for POST and PUT
+const validateBookPayload = (body) => {
+  if (!body || typeof body !== "object" || Object.keys(body).length === 0) {
+    return { valid: false, error: "Request body cannot be empty" };
+  }
+
+  const { title, author, price, pages } = body;
+
+  // 1. Missing or empty title
+  if (title === undefined || title === null || typeof title !== "string" || title.trim() === "") {
+    return { valid: false, error: "Title is required and must be a non-empty string" };
+  }
+
+  // 2. Missing or empty author
+  if (author === undefined || author === null || typeof author !== "string" || author.trim() === "") {
+    return { valid: false, error: "Author is required and must be a non-empty string" };
+  }
+
+  // 3. Missing or non-numeric price
+  if (
+    price === undefined ||
+    price === null ||
+    price === "" ||
+    typeof price === "boolean" ||
+    isNaN(Number(price))
+  ) {
+    return { valid: false, error: "Price is required and must be a valid number" };
+  }
+
+  const numPrice = Number(price);
+  if (numPrice < 0) {
+    return { valid: false, error: "Price must be a non-negative number" };
+  }
+
+  // Optional pages validation (accept positive integer if provided, else null)
+  let numPages = null;
+  if (pages !== undefined && pages !== null && pages !== "") {
+    numPages = Number(pages);
+    if (!Number.isInteger(numPages) || numPages <= 0) {
+      return { valid: false, error: "Pages must be a valid positive integer" };
+    }
+  }
+
+  return {
+    valid: true,
+    data: {
+      title: title.trim(),
+      author: author.trim(),
+      price: numPrice,
+      pages: numPages,
+    },
+  };
+};
+
+// Allowed columns for sorting to prevent SQL Injection
+const ALLOWED_ORDER_BY_COLUMNS = ["id", "title", "author", "price", "pages"];
+
+// ================= REST API ROUTES =================
 
 // 1. Root Route
 app.get("/", (req, res) => {
-  res.send("Welcome to my Node.js and Express Lab!\n\nBackend Development Fundamentals Lab 2 - SQLite Database and CRUD Routes");
+  res.send("Backend Development Fundamentals Lab 3 - REST API, Query Parameters, Validation and Debugging");
 });
 
-// Lab 1 Route 2: About information
-app.get(["/about", "/about/"], (req, res) => {
-  res.status(200).json({
-    name: "Giddaluru Revathi",
-    section: "CSE AIML-2B "
-  });
-});
-
-// Lab 1 Route 3: Current date and time
-app.get(["/time", "/time/"], (req, res) => {
-  res.status(200).json({
-    currentDateTime: new Date()
-  });
-});
-
-// 2. READ ALL: Get list of all books (supports both /books and /books/)
+// 2. READ ALL: Get books with Query Parameters (search_q, order_by, order, limit, offset, min_price, max_price)
 app.get(["/books", "/books/"], async (req, res) => {
   try {
-    const getBooksQuery = `SELECT * FROM book ORDER BY id;`;
-    const books = await db.all(getBooksQuery);
+    const {
+      search_q = "",
+      order_by = "id",
+      order = "ASC",
+      limit = 10,
+      offset = 0,
+      min_price,
+      max_price,
+    } = req.query;
+
+    // 2. Validate 'order_by'
+    const normalizedOrderBy = String(order_by).toLowerCase();
+    if (!ALLOWED_ORDER_BY_COLUMNS.includes(normalizedOrderBy)) {
+      return res.status(400).json({
+        error: `Invalid 'order_by' parameter. Allowed values: ${ALLOWED_ORDER_BY_COLUMNS.join(", ")}`,
+      });
+    }
+
+    // 3. Validate 'order'
+    const normalizedOrder = String(order).toUpperCase();
+    if (!["ASC", "DESC"].includes(normalizedOrder)) {
+      return res.status(400).json({
+        error: "Invalid 'order' parameter. Allowed values: ASC, DESC",
+      });
+    }
+
+    // 4. Validate 'limit' (positive integer default 10)
+    const limitNum = Number(limit);
+    if (!Number.isInteger(limitNum) || limitNum <= 0) {
+      return res.status(400).json({
+        error: "Invalid 'limit' parameter: must be a positive integer",
+      });
+    }
+
+    // 5. Validate 'offset' (non-negative integer default 0)
+    const offsetNum = Number(offset);
+    if (!Number.isInteger(offsetNum) || offsetNum < 0) {
+      return res.status(400).json({
+        error: "Invalid 'offset' parameter: must be a non-negative integer",
+      });
+    }
+
+    const conditions = [];
+    const params = [];
+
+    // 1. search_q: Partial book title search using LIKE
+    if (search_q !== undefined && String(search_q).trim() !== "") {
+      conditions.push("title LIKE ?");
+      params.push(`%${String(search_q).trim()}%`);
+    }
+
+    // 6. min_price: Filter books by minimum price
+    if (min_price !== undefined && min_price !== "") {
+      const minPriceNum = Number(min_price);
+      if (isNaN(minPriceNum) || minPriceNum < 0) {
+        return res.status(400).json({
+          error: "Invalid 'min_price' parameter: must be a non-negative number",
+        });
+      }
+      conditions.push("price >= ?");
+      params.push(minPriceNum);
+    }
+
+    // 7. max_price: Filter books by maximum price
+    if (max_price !== undefined && max_price !== "") {
+      const maxPriceNum = Number(max_price);
+      if (isNaN(maxPriceNum) || maxPriceNum < 0) {
+        return res.status(400).json({
+          error: "Invalid 'max_price' parameter: must be a non-negative number",
+        });
+      }
+      conditions.push("price <= ?");
+      params.push(maxPriceNum);
+    }
+
+    // Cross-validation: min_price cannot exceed max_price
+    if (
+      min_price !== undefined && min_price !== "" &&
+      max_price !== undefined && max_price !== ""
+    ) {
+      if (Number(min_price) > Number(max_price)) {
+        return res.status(400).json({
+          error: "'min_price' cannot be greater than 'max_price'",
+        });
+      }
+    }
+
+    let query = `SELECT * FROM book`;
+    if (conditions.length > 0) {
+      query += ` WHERE ${conditions.join(" AND ")}`;
+    }
+
+    // 2 & 3. Sort ordering + 4 & 5. Defaulted Limit & Offset
+    query += ` ORDER BY ${normalizedOrderBy} ${normalizedOrder} LIMIT ? OFFSET ?;`;
+    params.push(limitNum, offsetNum);
+
+    const books = await db.all(query, params);
     res.json(books);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -205,9 +431,13 @@ app.get(["/books", "/books/"], async (req, res) => {
 // 3. READ ONE: Get a single book by ID
 app.get(["/books/:bookId", "/books/:bookId/"], async (req, res) => {
   try {
-    const { bookId } = req.params;
+    const idValidation = validateBookId(req.params.bookId);
+    if (!idValidation.valid) {
+      return res.status(400).json({ error: idValidation.error });
+    }
+
     const getBookQuery = `SELECT * FROM book WHERE id = ?;`;
-    const book = await db.get(getBookQuery, [bookId]);
+    const book = await db.get(getBookQuery, [idValidation.id]);
 
     if (!book) {
       return res.status(404).json({ message: "Book not found" });
@@ -222,28 +452,13 @@ app.get(["/books/:bookId", "/books/:bookId/"], async (req, res) => {
 // 4. CREATE: Add a new book
 app.post(["/books", "/books/"], async (req, res) => {
   try {
-    // Check if request body exists
-    if (!req.body) {
-      return res.status(400).json({ error: "Request body is missing" });
+    const payloadValidation = validateBookPayload(req.body);
+    if (!payloadValidation.valid) {
+      return res.status(400).json({ error: payloadValidation.error });
     }
 
-    const { title, author, price, pages } = req.body;
+    const { title, author, price, pages } = payloadValidation.data;
 
-    // Validate required fields: title, author, price, and pages
-    if (
-      title === undefined ||
-      author === undefined ||
-      price === undefined ||
-      pages === undefined ||
-      title === "" ||
-      author === ""
-    ) {
-      return res.status(400).json({
-        error: "All fields are required: title, author, price, pages",
-      });
-    }
-
-    // Parameterized SQLite query with ? placeholders
     const addBookQuery = `
       INSERT INTO book (title, author, price, pages)
       VALUES (?, ?, ?, ?);
@@ -262,15 +477,24 @@ app.post(["/books", "/books/"], async (req, res) => {
 // 5. UPDATE: Update book details by ID
 app.put(["/books/:bookId", "/books/:bookId/"], async (req, res) => {
   try {
-    const { bookId } = req.params;
-    const { title, author, price, pages } = req.body;
+    const idValidation = validateBookId(req.params.bookId);
+    if (!idValidation.valid) {
+      return res.status(400).json({ error: idValidation.error });
+    }
+
+    const payloadValidation = validateBookPayload(req.body);
+    if (!payloadValidation.valid) {
+      return res.status(400).json({ error: payloadValidation.error });
+    }
+
+    const { title, author, price, pages } = payloadValidation.data;
 
     const updateBookQuery = `
       UPDATE book
       SET title = ?, author = ?, price = ?, pages = ?
       WHERE id = ?;
     `;
-    const result = await db.run(updateBookQuery, [title, author, price, pages, bookId]);
+    const result = await db.run(updateBookQuery, [title, author, price, pages, idValidation.id]);
 
     if (result.changes === 0) {
       return res.status(404).json({ message: "Book not found" });
@@ -285,9 +509,13 @@ app.put(["/books/:bookId", "/books/:bookId/"], async (req, res) => {
 // 6. DELETE: Delete a book by ID
 app.delete(["/books/:bookId", "/books/:bookId/"], async (req, res) => {
   try {
-    const { bookId } = req.params;
+    const idValidation = validateBookId(req.params.bookId);
+    if (!idValidation.valid) {
+      return res.status(400).json({ error: idValidation.error });
+    }
+
     const deleteBookQuery = `DELETE FROM book WHERE id = ?;`;
-    const result = await db.run(deleteBookQuery, [bookId]);
+    const result = await db.run(deleteBookQuery, [idValidation.id]);
 
     if (result.changes === 0) {
       return res.status(404).json({ message: "Book not found" });
@@ -299,9 +527,22 @@ app.delete(["/books/:bookId", "/books/:bookId/"], async (req, res) => {
   }
 });
 
-// 404 handler for unknown paths
+// ================= ERROR HANDLING & 404 MIDDLEWARE =================
+
+// 404 Catch-All handler for undefined routes
 app.use((req, res) => {
-  res.status(404).send("404 - Page Not Found");
+  res.status(404).json({
+    error: `Cannot ${req.method} ${req.originalUrl}`,
+    message: "Endpoint not found",
+  });
+});
+
+// Centralized error handling middleware
+app.use((err, req, res, next) => {
+  console.error(`[Unhandled Error] ${err.stack || err.message}`);
+  res.status(err.status || 500).json({
+    error: err.message || "Internal Server Error",
+  });
 });
 
 module.exports = app;

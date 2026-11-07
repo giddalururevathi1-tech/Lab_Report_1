@@ -163,8 +163,12 @@ const initializeDBAndServer = async () => {
 
     // In Vercel serverless, attempt copying bundled database to /tmp (writable directory)
     if (isVercel && !fs.existsSync(dbPath)) {
-      const sourceDb = path.join(__dirname, "database", "library.db");
-      if (fs.existsSync(sourceDb)) {
+      const candidates = [
+        path.join(__dirname, "database", "library.db"),
+        path.join(__dirname, "library.db"),
+      ];
+      const sourceDb = candidates.find((p) => fs.existsSync(p));
+      if (sourceDb) {
         try {
           fs.copyFileSync(sourceDb, dbPath);
         } catch (e) {
