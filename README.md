@@ -3,7 +3,7 @@
 
 **Course:** Backend Development Fundamentals (Year II Term II · Aurora)  
 **Faculty:** Mr Yugandhar Gurjalwar  
-**Live link:** Not applicable (Local Development / Testing Phase - Pre-Deployment)  
+**Live link:** [https://lab-report-4.onrender.com/](https://lab-report-4.onrender.com/)  
 **Local server:** [http://localhost:3000/](http://localhost:3000/)  
 **GitHub Repository:** [https://github.com/giddalururevathi1-tech/Lab_Report_1/tree/lab-4](https://github.com/giddalururevathi1-tech/Lab_Report_1/tree/lab-4)
 

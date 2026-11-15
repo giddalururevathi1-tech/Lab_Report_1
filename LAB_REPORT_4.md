@@ -13,7 +13,7 @@
 - **Faculty:** Mr Yugandhar Gurjalwar
 - **Module:** Authentication and User Management (Week 4, Slots 20–25)
 - **GitHub Repository (Lab 4):** [https://github.com/giddalururevathi1-tech/Lab_Report_1/tree/lab-4](https://github.com/giddalururevathi1-tech/Lab_Report_1/tree/lab-4)
-- **Live Deployment URL:** Pending final deployment phase (`Not applicable - Local Development Mode`)
+- **Live Deployment URL:** [https://lab-report-4.onrender.com/](https://lab-report-4.onrender.com/)
 
 ---
 
