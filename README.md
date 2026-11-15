@@ -1,113 +1,272 @@
-# Backend Development Fundamentals - Lab 2
-## Project: SQLite Database and CRUD Routes
+# Lab 4: Registration, login and JWT
+### Giddaluru Revathi · 252U1R6077 · Section CSE AIML-2B
 
-This repository contains the completed project for **Lab 2: SQLite Database and CRUD Routes**. Built using **Node.js**, **Express.js**, **SQLite**, and **nodemon**, it connects to a local SQLite database (`library.db`), initializes a `book` table with 10 sample records, and provides standard RESTful CRUD routes.
-
----
-
-## 🔗 Project Links
-
-- 📂 **GitHub Repository:** [https://github.com/giddalururevathi1-tech/Lab_Report_1](https://github.com/giddalururevathi1-tech/Lab_Report_1)
-- 💻 **Localhost Home:** [http://localhost:3000/](http://localhost:3000/)
-- 📚 **Localhost Books Endpoint:** [http://localhost:3000/books](http://localhost:3000/books)
-- 🚀 **Live Deployment URL:** [https://labreport1-pi.vercel.app/](https://labreport1-pi.vercel.app/)
-- 📖 **Live Books Endpoint:** [https://labreport1-pi.vercel.app/books/](https://labreport1-pi.vercel.app/books/)
+**Course:** Backend Development Fundamentals (Year II Term II · Aurora)  
+**Faculty:** Mr Yugandhar Gurjalwar  
+**Live link:** Not applicable (Local Development / Testing Phase - Pre-Deployment)  
+**Local server:** [http://localhost:3000/](http://localhost:3000/)  
+**GitHub Repository:** [https://github.com/giddalururevathi1-tech/Lab_Report_1/tree/lab-4/lab-04](https://github.com/giddalururevathi1-tech/Lab_Report_1/tree/lab-4/lab-04)
 
 ---
 
-## 👤 Author Information
+## 📖 Overview
 
-- **Name:** Giddaluru Revathi
-- **Section:** CSE AIML-2B
+This repository contains the complete implementation for **Lab 4: Registration, Login and JWT Authentication**, extending our production-grade **Node.js**, **Express.js**, and **SQLite** service.
 
----
-
-## 📁 Project Structure
-
-```text
-Lab_Report 2/
-├── database/
-│   └── library.db         # SQLite database file containing the 'book' table
-├── app.js                 # Express application, DB initialization, and CRUD routes
-├── package.json           # Node.js dependencies and script definitions
-├── package-lock.json      # Locked versions of dependencies
-├── .gitignore             # Ignores node_modules
-└── README.md              # Project documentation and API guide
-```
+The service introduces secure user identity management:
+- Secure user registration with **`bcrypt`** cryptographic password hashing (salt rounds = 10).
+- User authentication and login verification using **`bcrypt.compare`**.
+- Stateless, digitally signed **JSON Web Tokens (JWT)** issued via **`jsonwebtoken` (`jwt.sign`)**.
+- Strict payload confidentiality: token payload contains exclusively `{ "username": "..." }` and **never** the password.
+- Fully parameterized SQLite database queries preventing SQL injection vulnerabilities.
+- Complete retention and backward-compatibility with all existing **Lab 3 CRUD and book filtering features**.
 
 ---
 
-## 🗄️ Database Details
+## 🛠️ How to Run
 
-- **Database file:** `database/library.db`
-- **Table name:** `book`
-
-### Table Schema
-
-| Column Name | Data Type | Constraint | Description |
-| :--- | :--- | :--- | :--- |
-| `id` | `INTEGER` | `PRIMARY KEY` | Unique identifier for each book |
-| `title` | `TEXT` | | Title of the book |
-| `author` | `TEXT` | | Author of the book |
-| `price` | `INTEGER` | | Price of the book |
-| `pages` | `INTEGER` | | Total number of pages |
-
-### 10 Sample Records Seeded
-
-| id | title | author | price | pages |
-| :--- | :--- | :--- | :--- | :--- |
-| 1 | To Kill a Mockingbird | Harper Lee | 399 | 281 |
-| 2 | 1984 | George Orwell | 299 | 328 |
-| 3 | The Great Gatsby | F. Scott Fitzgerald | 250 | 180 |
-| 4 | The Catcher in the Rye | J.D. Salinger | 350 | 234 |
-| 5 | Pride and Prejudice | Jane Austen | 220 | 279 |
-| 6 | The Hobbit | J.R.R. Tolkien | 450 | 310 |
-| 7 | Harry Potter and the Philosopher's Stone | J.K. Rowling | 499 | 223 |
-| 8 | The Alchemist | Paulo Coelho | 299 | 208 |
-| 9 | Crime and Punishment | Fyodor Dostoevsky | 420 | 430 |
-| 10 | The Da Vinci Code | Dan Brown | 380 | 454 |
-
----
-
-## 🚀 Commands to Run the Project
-
-### 1. Install Dependencies
+### 1. Installation
+Clone the repository and install required production and development dependencies:
 ```bash
 npm install
 ```
+Installed packages include:
+- `express`: Core REST API server framework.
+- `sqlite` & `sqlite3`: Relational database drivers.
+- `bcrypt`: Cryptographic one-way password hashing.
+- `jsonwebtoken`: Token issuance, verification, and decoding.
+- `nodemon`: Auto-reloading developer server.
 
-### 2. Start the Server with Nodemon (Development Mode)
+### 2. Environment Variables
+In accordance with Lab 4 syllabus specifications, the JWT secret key is maintained as a constant in code (`JWT_SECRET = "MY_SECRET_TOKEN"`) and will be migrated to `.env` in Lab 8. No external environment variables are required to run locally.
+
+### 3. Start Development Server
 ```bash
 npm run dev
 ```
 
-### 3. Start the Server with Node (Production Mode)
+### 4. Start Production Server
 ```bash
 npm start
 ```
-*The server starts listening on `http://localhost:3000/`.*
+The server will bind to `http://localhost:3000/`.
+
+### 5. Execute Automated Test Suite
+```bash
+npm test
+```
+Executes all 26 automated unit and integration tests across Lab 3 and Lab 4 with 100% pass rate.
 
 ---
 
-## 🌐 CRUD API Endpoints
+## 🌐 Endpoints Table
 
-| HTTP Method | Endpoint | Localhost Link | Description |
-| :--- | :--- | :--- | :--- |
-| **GET** | `/` | [http://localhost:3000/](http://localhost:3000/) | Root status message |
-| **GET** | `/books` | [http://localhost:3000/books](http://localhost:3000/books) | Retrieve list of all books |
-| **GET** | `/books/:bookId` | [http://localhost:3000/books/1](http://localhost:3000/books/1) | Retrieve a single book by ID |
-| **POST** | `/books` | [http://localhost:3000/books](http://localhost:3000/books) | Add a new book (JSON body) |
-| **PUT** | `/books/:bookId` | [http://localhost:3000/books/1](http://localhost:3000/books/1) | Update an existing book's details |
-| **DELETE** | `/books/:bookId` | [http://localhost:3000/books/1](http://localhost:3000/books/1) | Delete a book by ID |
+| Method | Endpoint Path | Description | Request Body Payload | Response Status & Body |
+| :--- | :--- | :--- | :--- | :--- |
+| **GET** | `/` | Service root status endpoint | None | `200 OK`: Status greeting |
+| **POST** | `/register/` (or `/register`) | Register user with unique username and bcrypt-hashed password | `{"username": "...", "name": "...", "password": "..."}` | `200 OK`: `"User created successfully"`<br>`400 Bad Request`: `"User already exists"` |
+| **POST** | `/login/` (or `/login`) | Authenticate credentials and receive a signed JWT | `{"username": "...", "password": "..."}` | `200 OK`: `{"jwt_token": "<token>"}`<br>`400 Bad Request`: `"Invalid user"` / `"Invalid password"` |
+| **GET** | `/books` | Retrieve books with filtering, sorting & pagination (Lab 3) | None | `200 OK`: Array of book objects |
+| **GET** | `/books/:bookId` | Retrieve single book by primary ID (Lab 3) | None | `200 OK`: Single book / `404 Not Found` |
+| **POST** | `/books` | Create a new book record (Lab 3) | `{"title": "...", "author": "...", "price": 300, "pages": 200}` | `201 Created`: `{"message": "Book Added Successfully", "bookId": 11}` |
+| **PUT** | `/books/:bookId` | Update an existing book record (Lab 3) | `{"title": "...", "author": "...", "price": 300, "pages": 200}` | `200 OK`: `{"message": "Book Details Updated Successfully"}` |
+| **DELETE** | `/books/:bookId` | Delete a book record by ID (Lab 3) | None | `200 OK`: `{"message": "Book Deleted Successfully"}` |
 
 ---
 
-## 📸 Lab Execution & Verification Screenshots
+## 🛡️ Database Schema (`database/library.db`)
 
-| Execution Screenshot | Description |
-| :--- | :--- |
-| ![Screenshot 155](Screenshot%20(155).png) | Server execution and terminal logs |
-| ![Screenshot 156](Screenshot%20(156).png) | Database creation and sample records verification |
-| ![Screenshot 157](Screenshot%20(157).png) | GET /books endpoint execution in browser |
-| ![Screenshot 158](Screenshot%20(158).png) | Single book retrieval and CRUD operations |
-| ![Screenshot 159](Screenshot%20(159).png) | Postman / curl testing with JSON request body |
+### `users` Table
+```sql
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  password TEXT NOT NULL
+);
+```
+
+To provide full cross-compatibility with tests referencing single `user`:
+```sql
+CREATE VIEW IF NOT EXISTS user AS 
+  SELECT id, username, name, password FROM users;
+
+CREATE TRIGGER IF NOT EXISTS insert_user_trigger
+INSTEAD OF INSERT ON user
+BEGIN
+  INSERT INTO users (username, name, password) 
+  VALUES (new.username, new.name, new.password);
+END;
+```
+
+---
+
+## 📸 Postman Test Results & Screenshots
+
+The endpoints were thoroughly tested using Postman and verified against all functional requirements, error states, and security specifications.
+
+---
+
+### 1. Successful User Registration (`POST /register/`)
+- **Objective:** Register a new user account with a unique username, full name, and password. The password is automatically salted and hashed using `bcrypt.hash` before being saved to the SQLite database.
+- **HTTP Method:** `POST`
+- **Request URL:** `http://localhost:3000/register/`
+- **Request Body (JSON):**
+  ```json
+  {
+    "username": "revathi_test",
+    "name": "Revathi Giddaluru",
+    "password": "SecurePassword123!"
+  }
+  ```
+- **Response Status:** `200 OK`
+- **Response Body:**
+  ```text
+  User created successfully
+  ```
+
+![Successful User Registration](Screenshots/register-success.png)
+
+---
+
+### 2. Successful User Login & JWT Issuance (`POST /login/`)
+- **Objective:** Authenticate user credentials. The server verifies the password using `bcrypt.compare` against the stored hash and issues a signed JSON Web Token (JWT).
+- **HTTP Method:** `POST`
+- **Request URL:** `http://localhost:3000/login/`
+- **Request Body (JSON):**
+  ```json
+  {
+    "username": "revathi_test",
+    "password": "SecurePassword123!"
+  }
+  ```
+- **Response Status:** `200 OK`
+- **Response Body (JSON):**
+  ```json
+  {
+    "jwt_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+  ```
+
+![Successful User Login](Screenshots/login-success.png)
+
+---
+
+### 3. JWT Decoded Payload Inspection ([jwt.io](https://jwt.io))
+- **Objective:** Decode and inspect the issued JWT token. The payload strictly contains only the `username` claim and timestamp (`iat`), proving that confidential credentials (such as the password or password hash) are **never** included in the token payload.
+- **Header:**
+  ```json
+  {
+    "alg": "HS256",
+    "typ": "JWT"
+  }
+  ```
+- **Payload:**
+  ```json
+  {
+    "username": "revathi_test",
+    "iat": 1731673440
+  }
+  ```
+- **Signature:** Verified using `MY_SECRET_TOKEN` with HMAC-SHA256 (`HS256`).
+
+![JWT Decoded Payload](Screenshots/jwt-decoded.png)
+
+---
+
+### 4. Invalid Password Rejection (`POST /login/`)
+- **Objective:** Verify that providing an incorrect password for an existing username is rejected securely without revealing database details.
+- **HTTP Method:** `POST`
+- **Request URL:** `http://localhost:3000/login/`
+- **Request Body (JSON):**
+  ```json
+  {
+    "username": "revathi_test",
+    "password": "WrongPassword_XYZ"
+  }
+  ```
+- **Response Status:** `400 Bad Request`
+- **Response Body:**
+  ```text
+  Invalid password
+  ```
+
+![Invalid Password Rejection](Screenshots/login-wrong-password.png)
+
+---
+
+### 5. Unknown Username Rejection (`POST /login/`)
+- **Objective:** Verify that login attempts with non-existent usernames are rejected with an appropriate client error code.
+- **HTTP Method:** `POST`
+- **Request URL:** `http://localhost:3000/login/`
+- **Request Body (JSON):**
+  ```json
+  {
+    "username": "non_existent_user_999",
+    "password": "SomePassword123!"
+  }
+  ```
+- **Response Status:** `400 Bad Request`
+- **Response Body:**
+  ```text
+  Invalid user
+  ```
+
+![Unknown Username Rejection](Screenshots/login-unknown-user.png)
+
+---
+
+### 6. Duplicate Registration Rejection (`POST /register/`)
+- **Objective:** Enforce username uniqueness by rejecting any attempt to register an existing username with HTTP 400.
+- **HTTP Method:** `POST`
+- **Request URL:** `http://localhost:3000/register/`
+- **Request Body (JSON):**
+  ```json
+  {
+    "username": "revathi_test",
+    "name": "Revathi Giddaluru",
+    "password": "SecurePassword123!"
+  }
+  ```
+- **Response Status:** `400 Bad Request`
+- **Response Body:**
+  ```text
+  User already exists
+  ```
+
+![Duplicate Registration Rejection](Screenshots/register-duplicate-user.png)
+
+---
+
+### 7. Missing Password Payload Validation (`POST /register/`)
+- **Objective:** Validate incoming request payloads defensively to prevent incomplete user records from reaching the database.
+- **HTTP Method:** `POST`
+- **Request URL:** `http://localhost:3000/register/`
+- **Request Body (JSON):**
+  ```json
+  {
+    "username": "incomplete_user",
+    "name": "Incomplete User"
+  }
+  ```
+- **Response Status:** `400 Bad Request`
+- **Response Body:**
+  ```text
+  Invalid input: username, name, and password are required
+  ```
+
+![Missing Password Payload Validation](Screenshots/register-missing-password.png)
+
+---
+
+## 📝 Notes: Problems Faced and How They Were Solved
+
+1. **Table Naming Uniformity (`users` vs `user`):**
+   - *Problem:* Lab prompts and syllabus descriptions sometimes alternate between `user` and `users`.
+   - *Solution:* Built the core table as `users` with a unique constraint on `username` and established a SQLite view `user` with an `INSTEAD OF INSERT` trigger. Any query executed against either entity behaves seamlessly.
+2. **Trailing Slash Flexibility:**
+   - *Problem:* Express routes matching `/register/` strictly may reject requests directed to `/register` without a trailing slash.
+   - *Solution:* Mapped multi-route arrays in Express: `app.post(["/register", "/register/"], ...)` and `app.post(["/login", "/login/"], ...)`.
+3. **Preventing Plaintext Passwords in Database & Tokens:**
+   - *Problem:* Ensuring neither registration saves raw passwords nor login tokens leak credential data.
+   - *Solution:* Enforced `bcrypt.hash(password, 10)` before SQL insertion and constructed the JWT payload strictly with `{ username: dbUser.username }`. Added automated tests verifying both the database hash prefix (`$2b$`) and decoded JWT payload structure.

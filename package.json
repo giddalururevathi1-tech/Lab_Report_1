@@ -1,22 +1,27 @@
 {
-  "name": "sqlite-database-and-crud-routes",
+  "name": "registration-login-and-jwt",
   "version": "1.0.0",
-  "description": "Backend Development Fundamentals Lab 2 - SQLite Database and CRUD Routes",
+  "description": "Backend Development Fundamentals Lab 4 - Registration, Login and JWT Authentication",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "test": "node test.js"
   },
   "keywords": [
     "nodejs",
     "express",
     "sqlite",
-    "crud"
+    "bcrypt",
+    "jwt",
+    "authentication"
   ],
-  "author": "",
+  "author": "Giddaluru Revathi (252U1R6077)",
   "license": "ISC",
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "express": "^5.3.0",
+    "jsonwebtoken": "^9.0.3",
     "sqlite": "^5.1.1",
     "sqlite3": "^6.0.1"
   },
