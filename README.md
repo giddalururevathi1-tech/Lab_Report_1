@@ -5,7 +5,7 @@
 **Faculty:** Mr Yugandhar Gurjalwar  
 **Live link:** Not applicable (Local Development / Testing Phase - Pre-Deployment)  
 **Local server:** [http://localhost:3000/](http://localhost:3000/)  
-**GitHub Repository:** [https://github.com/giddalururevathi1-tech/Lab_Report_1/tree/lab-4/lab-04](https://github.com/giddalururevathi1-tech/Lab_Report_1/tree/lab-4/lab-04)
+**GitHub Repository:** [https://github.com/giddalururevathi1-tech/Lab_Report_1/tree/lab-4](https://github.com/giddalururevathi1-tech/Lab_Report_1/tree/lab-4)
 
 ---
 
