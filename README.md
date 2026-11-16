@@ -19,7 +19,7 @@ The service introduces secure user identity management:
 - Stateless, digitally signed **JSON Web Tokens (JWT)** issued via **`jsonwebtoken` (`jwt.sign`)**.
 - Strict payload confidentiality: token payload contains exclusively `{ "username": "..." }` and **never** the password.
 - Fully parameterized SQLite database queries preventing SQL injection vulnerabilities.
-- Complete retention and backward-compatibility with all existing **Lab 3 CRUD and book filtering features**.
+- Complete retention and backward compatibility with existing book management and filtering features.
 
 ---
 
@@ -55,7 +55,7 @@ The server will bind to `http://localhost:3000/`.
 ```bash
 npm test
 ```
-Executes all 26 automated unit and integration tests across Lab 3 and Lab 4 with 100% pass rate.
+Executes all 9 automated unit and integration tests for Lab 4 with 100% pass rate.
 
 ---
 
@@ -254,6 +254,12 @@ The endpoints were thoroughly tested using Postman and verified against all func
   ```text
   Invalid input: username, name, and password are required
   ```
+
+
+### 8. Automated Test Suite – All Tests Passed
+
+![Lab 4 Tests Passed](Screenshots/lab4-tests-passed.png)
+
 
 ![Missing Password Payload Validation](Screenshots/register-missing-password.png)
 
